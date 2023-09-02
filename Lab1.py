@@ -1,6 +1,9 @@
 import re
 import logging
+import os
 
+
+pygame.init()
 
 logging.basicConfig(
     filename='logger.log',  # Имя файла для записи логов
@@ -8,14 +11,16 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'  # Формат записи логов
 )
 
+os.system('clear')
+
 print("Добро пожаловать!\n\nПожалуйста зарегистрируйтесь введя указанные ниже данные")
 print("\nВведите логин (Номер телефона, Email или имя пользователя): ")
 username = input()
 
-logging.info(f'Введён пароль: {username}')
+logging.info(f'Введён логин: {username}')
 
 # Проверка логина
-username_reg = re.compile(r"^\+?(\d[\d\-.\s]+)?(\([\d\-.\s]+\))?[\d\-.\s]+\d$|^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})$")
+username_reg = re.compile(r"^\+?(\d[\d\-.\s]+)?(\([\d\-.\s]+\))?[\d\-.\s]+\d$|^([a-zA-Zа-яА-ЯЁё0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})$|^([a-zA-Zа-яА-ЯЁё_]+)$")
 
 try:
     if username_reg.match(username):
