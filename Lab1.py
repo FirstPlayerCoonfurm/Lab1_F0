@@ -3,8 +3,6 @@ import logging
 import os
 
 
-pygame.init()
-
 logging.basicConfig(
     filename='logger.log',  # Имя файла для записи логов
     level=logging.INFO,  # Уровень записываемых логов
