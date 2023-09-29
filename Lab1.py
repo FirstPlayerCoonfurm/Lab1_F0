@@ -1,6 +1,7 @@
 import re
 import logging
-import PySimpleGUI as sg
+import os
+
 
 logging.basicConfig(
     filename='logger.log',  # Имя файла для записи логов
@@ -15,7 +16,7 @@ def val_username(login: str) -> (str, str):
         try:
             if not login:
                 logging.info("Логин не может быть пустым")
-                login = sg.popup_get_text("Введите логин: ")
+                login = input("Введите логин: ")
 
             logging.info(f'Введён логин: {login}')
             if len(login) == 5:
@@ -34,14 +35,14 @@ def val_username(login: str) -> (str, str):
                     return "True", "success"
 
                 logging.info("Неверный логин")
-                login = sg.popup_get_text("Неверный логин. Введите логин: ")
+                login = input("Неверный логин. Введите логин: ")
             else:
                 logging.info("Длина логина неверна")
-                login = sg.popup_get_text("Неверная длина логина. Введите логин: ")
+                login = input("Неверная длина логина. Введите логин: ")
 
         except Exception as err:
             logging.error(err)
-            login = sg.popup_get_text("Ошибка ввода логина. Введите логин: ")
+            login = input("Ошибка ввода логина. Введите логин: ")
 
 
 def val_pass(password: str, conf_password: str) -> (str, str):
@@ -49,12 +50,12 @@ def val_pass(password: str, conf_password: str) -> (str, str):
         try:
             logging.info(f'Введён пароль: {password}')
 
-            if len(password) != 7:
+            if len(password) <= 7:
                 logging.info("Неверная длина пароля")
-                password = sg.popup_get_text("Неверная длина пароля. Введите пароль: ")
+                password = input("Неверная длина пароля. Введите пароль: \n")
                 continue
 
-            password_reg1 = re.compile(r"[a-zA-Z]+")
+            password_reg1 = re.compile(r"[a-zA-Z0-9]+")
 
             if re.match(password_reg1, password):
                 logging.info("Пароль верен!")
@@ -67,59 +68,46 @@ def val_pass(password: str, conf_password: str) -> (str, str):
                 else:
                     # Логирование несовпадения паролей
                     logging.warning('Пароль не подтверждён, в регистрации отказано')
-                    password = sg.popup_get_text("Пароли не совпадают. Введите пароль: ")
-                    conf_password = sg.popup_get_text("Подтвердите пароль: ")
+                    password = input("Пароли не совпадают. Введите пароль: ")
+                    conf_password = input("Подтвердите пароль: ")
                     continue
             else:
                 logging.info("Неверный формат пароля")
-                password = sg.popup_get_text("Неверный формат пароля. Введите пароль: ")
+                password = input("Неверный формат пароля. Введите пароль: \n")
                 continue
 
         except Exception as err:
             logging.error(err)
-            password = sg.popup_get_text("Ошибка введенного пароля. Введите пароль: ")
-            conf_password = sg.popup_get_text("Подтвердите пароль: ")
+            password = input("Ошибка введенного пароля. Введите пароль: ")
+            conf_password = input("Подтвердите пароль: ")
 
 
-def register():
-    layout = [
-        [sg.Text('Введите логин:'), sg.Input(key='login')],
-        [sg.Text('Введите пароль:'), sg.Input(key='password', password_char='*')],
-        [sg.Text('Подтвердите пароль:'), sg.Input(key='conf_password', password_char='*')],
-        [sg.Button('Зарегистрироваться'), sg.Button('Отмена')]
-    ]
+def register(login: str, password: str, conf_password: str) -> (str, str):
+    try:
+        username_result, username_msg = val_username(login)
+        pass_result, pass_msg = val_pass(password, conf_password)
 
-    window = sg.Window('Регистрация', layout)
-
-    while True:
-        event, values = window.read()
-
-        if event == sg.WINDOW_CLOSED or event == 'Отмена':
-            break
-
-        login = values['login']
-        password = values['password']
-        conf_password = values['conf_password']
-
-        try:
-            username_result, username_msg = val_username(login)
-            pass_result, pass_msg = val_pass(password, conf_password)
-
-            if username_result == "True" and pass_result == "True":
-                sg.popup("Nice!", "Успешное выполнение")
-                break
+        if username_result == "True" and pass_result == "True":
+            return "True", "Успешное выполнение"
+        else:
+            if username_result == "True":
+                return "False", pass_msg
             else:
-                if username_result == "True":
-                    sg.popup("Error!", pass_msg)
-                else:
-                    sg.popup("Error!", username_msg)
-
-        except:
-            logging.error()
-            sg.popup("Error!", "Ошибка выполнения программы")
-
-    window.close()
+                return "False", username_msg
 
 
-if __name__ == '__main__':
-    register()
+    except:
+        logging.error()
+        return "False", "Ошибка выполнения программы"
+
+
+result = register(
+    login=input("Введите логин: "),
+    password=input("Введите пароль: "),
+    conf_password=input("Подтвердите пароль: ")
+)
+
+if result[0] == "True":
+    print("Nice!", result[1])
+else:
+    print("Error!", result[1])
