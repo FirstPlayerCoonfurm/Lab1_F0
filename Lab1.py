@@ -9,7 +9,6 @@ logging.basicConfig(
 )
 logging.getLogger().addHandler(logging.StreamHandler())
 
-
 def val_username(login: str) -> (str, str):
     while True:
         try:
