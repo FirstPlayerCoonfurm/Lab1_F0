@@ -1,7 +1,8 @@
-import unittest
-from unittest.mock import patch
-import logging
 import re
+import logging
+import os
+import unittest
+from unittest import mock
 
 
 logging.basicConfig(
@@ -20,7 +21,7 @@ def val_username(login: str) -> (str, str):
                 login = input("Введите логин: ")
 
             logging.info(f'Введён логин: {login}')
-            if len(login) == 5:
+            if len(login) >= 5:
                 logging.info("Корректная длина логина")
 
                 if re.match(r"^\+?(\d[\d\-.\s]+)?(\([\d\-.\s]+\))?[\d\-.\s]+\d$", login):
@@ -37,9 +38,10 @@ def val_username(login: str) -> (str, str):
 
                 logging.info("Неверный логин")
                 login = input("Неверный логин. Введите логин: ")
-            else:
+            elif len(login) == 0:
                 logging.info("Длина логина неверна")
                 login = input("Неверная длина логина. Введите логин: ")
+                return "False", "unsuccess"
 
         except Exception as err:
             logging.error(err)
@@ -96,7 +98,6 @@ def register(login: str, password: str, conf_password: str) -> (str, str):
             else:
                 return "False", username_msg
 
-
     except:
         logging.error()
         return "False", "Ошибка выполнения программы"
@@ -114,79 +115,78 @@ else:
     print("Error!", result[1])
 
 
-class TestRegistration(unittest.TestCase):
-    def setUp(self):
-        # Настройка логирования
-        self.logger = logging.getLogger()
-        self.logger.disabled = True
+class TestValidation(unittest.TestCase):
+    def test_val_username_empty_login(self):
+        with mock.patch('builtins.input', return_value=''):
+            result = val_username('')
+            self.assertEqual(result, ('False', 'unsuccess'))
 
-    def tearDown(self):
-        # Восстановление логирования после каждого теста
-        self.logger.disabled = False
+    def test_val_username_valid_email(self):
+        with mock.patch('builtins.input', return_value='test@example.com'):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
 
-    def test_registration_successful(self):
-        result = register("username", "password1", "password1")
-        self.assertEqual(result, ("True", "Успешное выполнение"))
+    def test_val_username_valid_username(self):
+        with mock.patch('builtins.input', return_value='username123'):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
 
-    def test_empty_login(self):
-        with patch('builtins.input', return_value=""):
-            result = register("", "password1", "password1")
-        self.assertEqual(result, ("False", "Логин не может быть пустым"))
+    def test_val_username_invalid_login(self):
+        with mock.patch('builtins.input', side_effect=['invalidlogin', 'username123']):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
 
-    def test_valid_phone_login(self):
-        with patch('builtins.input', return_value="+1234567890"):
-            result = register("+1234567890", "password1", "password1")
-        self.assertEqual(result, ("True", "Успешное выполнение"))
+    def test_val_username_exception(self):
+        with mock.patch('builtins.input', side_effect=[Exception('Error'), 'username123']):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
 
-    def test_invalid_phone_login(self):
-        with patch('builtins.input', side_effect=["+123", "+1234", "+12345", "+123456789012345"]):
-            result = register("", "password1", "password1")
-        self.assertEqual(result, ("False", "Неверная длина логина"))
+    def test_val_pass_valid_password(self):
+        with mock.patch('builtins.input', return_value='password123'):
+            result = val_pass('password123', 'password123')
+            self.assertEqual(result, ('True', 'Успешное подтверждение пароля'))
 
-    def test_valid_email_login(self):
-        with patch('builtins.input', return_value="test@example.com"):
-            result = register("test@example.com", "password1", "password1")
-        self.assertEqual(result, ("True", "Успешное выполнение"))
+    def test_val_pass_invalid_password(self):
+        with mock.patch('builtins.input', side_effect=['abcdefg', 'password123', 'password123']):
+            result = val_pass('', '')
+            self.assertEqual(result, ('True', 'Успешное подтверждение пароля'))
 
-    def test_invalid_email_login(self):
-        with patch('builtins.input', return_value="invalid-email"):
-            result = register("invalid-email", "password1", "password1")
-        self.assertEqual(result, ("False", "Неверный логин"))
+    def test_val_pass_password_mismatch(self):
+        with mock.patch('builtins.input', side_effect=['password123', 'differentpassword', 'password123']):
+            result = val_pass('', '')
+            self.assertEqual(result, ('False', 'Пароли не совпадают. Введите пароль: '))
 
-    def test_valid_username_login(self):
-        with patch('builtins.input', return_value="username"):
-            result = register("username", "password1", "password1")
-        self.assertEqual(result, ("True", "Успешное выполнение"))
+    def test_val_pass_invalid_format(self):
+        with mock.patch('builtins.input', side_effect=['1', 'password123', 'password123']):
+            result = val_pass('', '')
+            self.assertEqual(result, ('True', 'Успешное подтверждение пароля'))
 
-    def test_invalid_username_login(self):
-        with patch('builtins.input', return_value="username#!"):
-            result = register("username#!", "password1", "password1")
-        self.assertEqual(result, ("False", "Неверный логин"))
+    def test_val_pass_exception(self):
+        with mock.patch('builtins.input', side_effect=[Exception('Error'), 'password123', 'password123']):
+            result = val_pass('', '')
+            self.assertEqual(result, ('True', 'Успешное подтверждение пароля'))
 
-    def test_short_password(self):
-        with patch('builtins.input', return_value="short"):
-            result = register("username", "short", "short")
-        self.assertEqual(result, ("False", "Неверная длина пароля"))
 
-    def test_valid_password(self):
-        with patch('builtins.input', return_value="password1"):
-            result = register("username", "password1", "password1")
-        self.assertEqual(result, ("True", "Успешное выполнение"))
+class TestRegister(unittest.TestCase):
+    def test_register_successful(self):
+        with mock.patch('builtins.input', side_effect=['username123', 'password123', 'password123']):
+            result = register('', '', '')
+            self.assertEqual(result, ('True', 'Успешное выполнение'))
 
-    def test_invalid_password(self):
-        with patch('builtins.input', return_value="!@#$%^"):
-            result = register("username", "!@#$%^", "!@#$%^")
-        self.assertEqual(result, ("False", "Неверный формат пароля"))
+    def test_register_failed_invalid_password(self):
+        with mock.patch('builtins.input', side_effect=['username123', 'abc', 'abc']):
+            result = register('', '', '')
+            self.assertEqual(result, ('False', 'Неверная длина пароля'))
 
-    def test_password_mismatch(self):
-        with patch('builtins.input', side_effect=["password1", "password2"]):
-            result = register("username", "password1", "password2")
-        self.assertEqual(result, ("False", "Пароли не совпадают"))
+    def test_register_failed_invalid_username(self):
+        with mock.patch('builtins.input', side_effect=['', 'password123', 'password123']):
+            result = register('', '', '')
+            self.assertEqual(result, ('False', 'Логин не может быть пустым'))
 
-    def test_input_error(self):
-        with patch('builtins.input', side_effect=Exception("Input error")):
-            result = register("username", "password1", "password1")
-        self.assertEqual(result, ("False", "Ошибка выполнения программы"))
+    def test_register_exception(self):
+        with mock.patch('builtins.input', side_effect=[Exception('Error')]):
+            result = register('', '', '')
+            self.assertEqual(result, ('False', 'Ошибка выполнения программы'))
 
 
 if __name__ == '__main__':
