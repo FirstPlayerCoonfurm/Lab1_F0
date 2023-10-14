@@ -91,10 +91,7 @@ def register(login: str, password: str, conf_password: str) -> (str, str):
         return "False", "Ошибка выполнения программы"
 
 
-
-
-
-class TestValidation(unittest.TestCase):
+class TestValidationAndRegister(unittest.TestCase):
     def test_val_username_empty_login(self):
         result = val_username('')
         self.assertEqual(result, ('False', 'Длина логина неверна'))
@@ -144,8 +141,6 @@ class TestValidation(unittest.TestCase):
             result = val_pass('', '')
             self.assertEqual(result, ('False', 'Неверная длина пароля'))
 
-
-class TestRegister(unittest.TestCase):
     def test_register_successful(self):
         with mock.patch('builtins.input', side_effect=['username123', 'password123', 'password123']):
             result = register('', '', '')
@@ -166,6 +161,45 @@ class TestRegister(unittest.TestCase):
             with self.assertLogs() as logs:
                 result = register('', '', '')
                 self.assertEqual(result, ('False', 'Ошибка выполнения программы'))
+
+    def test_val_username_valid_phone(self):
+        with mock.patch('builtins.input', return_value='+1234567890'):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
+
+    def test_val_username_valid_username(self):
+        with mock.patch('builtins.input', return_value='test_user_123'):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
+
+    def test_val_username_invalid_email(self):
+        with mock.patch('builtins.input', side_effect=['invalid_email@example', 'username123']):
+            result = val_username('')
+            self.assertEqual(result, ('False', 'Неверный формат логина'))
+
+    def test_val_username_invalid_password(self):
+        with mock.patch('builtins.input', side_effect=['password123', 'username123']):
+            result = val_username('')
+            self.assertEqual(result, ('True', 'success'))
+
+    def test_val_username_empty_password(self):
+        result = val_username('')  # Providing empty login argument
+        self.assertEqual(result, ('False', 'Длина логина неверна'))
+
+    def test_val_pass_empty_password(self):
+        with mock.patch('builtins.input', return_value=''):
+            result = val_pass('', '')
+            self.assertEqual(result, ('False', 'Неверная длина пароля'))
+
+    def test_register_successful_new(self):
+        with mock.patch('builtins.input', side_effect=['username123', 'password123', 'password123']):
+            result = register('', '', '')
+            self.assertEqual(result, ('False', 'Неверная длина пароля'))
+
+    def test_register_failed_invalid_password_new(self):
+        with mock.patch('builtins.input', side_effect=['username123', 'abc', 'abc']):
+            result = register('', '', '')
+            self.assertEqual(result, ('False', 'Неверная длина пароля'))
 
 
 if __name__ == '__main__':
